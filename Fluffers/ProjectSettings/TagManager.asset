@@ -41,3 +41,6 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
+  - name: Teddy
+    uniqueID: 673003725
+    locked: 0
