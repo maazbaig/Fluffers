@@ -10,12 +10,18 @@ public class PushPull : MonoBehaviour
     
     public Transform grabDetectPos;
     private Movement movementScript;
-    
+
+    private Animator anim;
+    private float orgSpeed;
+    private float halfSpeed;
 
     // Start is called before the first frame update
     void Start()
     {
         movementScript = GetComponent<Movement>();
+        anim = GetComponent<Animator>();
+        orgSpeed = movementScript.speed;
+        halfSpeed = orgSpeed / 2;
     }
 
     // Update is called once per frame
@@ -24,15 +30,20 @@ public class PushPull : MonoBehaviour
         if (Input.GetAxis("LeftTrigger") > 0.5f)
         {
             grabbing = true;
+            
 
             if (target != null)
             {
                 grabbedObject = target;
+                anim.SetBool("grabbing", true);
+                movementScript.speed = halfSpeed;
             }
         }
         else
         {
             grabbing = false;
+            anim.SetBool("grabbing", false);
+            movementScript.speed = orgSpeed;
         }
 
         if (grabbedObject != null)

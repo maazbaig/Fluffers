@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class Movement : MonoBehaviour
 {
+    public GameObject TestVar;
     public float speed;
     public Animator anim;
 
@@ -18,11 +19,14 @@ public class Movement : MonoBehaviour
     public Transform jumpPosition;
     public Transform backPosition;
     public Transform frontPosition;
+    public Transform hangingPosition;
 
     public float gravityMuliplier;
     Vector3 MovementInput;
 
     public bool facingRight = true;
+    private PushPull pushPull;
+    private bool climbing = false;
 
     // Start is called before the first frame update
     void Start()
@@ -31,42 +35,46 @@ public class Movement : MonoBehaviour
         flippedScale = new Vector3(-orgScale.x, orgScale.y, orgScale.z);
         anim.SetFloat("facingRight", 1);
         rb = GetComponent<Rigidbody2D>();
+        pushPull = GetComponent<PushPull>();
     }
 
     // Update is called once per frame
     void Update()
     {
-        MovementInput = new Vector3(Input.GetAxis("MoveHorizontal"), 0, 0.0f);
-
-        transform.position = transform.position + MovementInput * Time.deltaTime * speed;
-
-        anim.SetFloat("speed", MovementInput.x);
-
-        //Reverse Scale
-        if (MovementInput.x < -.05f)
+        if(!climbing)
         {
-            transform.localScale = flippedScale;
-            facingRight = false;
-            //anim.SetFloat("facingRight", 0);
-        } else if (MovementInput.x > .05f)
-        {
-            transform.localScale = orgScale;
-            facingRight = true;
-            //anim.SetFloat("facingRight", 1);
-        }
+            MovementInput = new Vector3(Input.GetAxis("MoveHorizontal"), 0, 0.0f);
+
+            transform.position = transform.position + MovementInput * Time.deltaTime * speed;
+
+            anim.SetFloat("speed", MovementInput.x);
+
+            //Reverse Scale
+            if (MovementInput.x < -.05f && !pushPull.grabbing)
+            {
+                transform.localScale = flippedScale;
+                facingRight = false;
+                anim.SetFloat("facingRight", 0);
+            } else if (MovementInput.x > .05f && !pushPull.grabbing)
+            {
+                transform.localScale = orgScale;
+                facingRight = true;
+                anim.SetFloat("facingRight", 1);
+            }
         
 
-        //Jump
-        if(Input.GetButtonDown("A_Button") && grounded)
-        {
-            anim.SetTrigger("jump");
-            rb.AddForce(Vector2.up * jumpPower, ForceMode2D.Impulse);
-        }
+            //Jump
+            if(Input.GetButtonDown("A_Button") && grounded)
+            {
+                anim.SetTrigger("jump");
+                rb.AddForce(Vector2.up * jumpPower, ForceMode2D.Impulse);
+            }
 
-        //Gravity Multiplier for falling
-        if(rb.velocity.y < 0)
-        {
-            rb.AddForce(Vector2.down * gravityMuliplier);
+            //Gravity Multiplier for falling
+            if(rb.velocity.y < 0)
+            {
+                rb.AddForce(Vector2.down * gravityMuliplier);
+            }
         }
 
     }
@@ -81,6 +89,11 @@ public class Movement : MonoBehaviour
 
         //Front Position Test
         RaycastHit2D frontHit= Physics2D.Raycast(frontPosition.position, -Vector2.up, 1);
+
+        //Hanging Position Test
+        RaycastHit2D hangingHit = Physics2D.Raycast(hangingPosition.position, -Vector2.up, 0.5f);
+        
+        
 
         if (hit.collider != null && backHit.collider != null && frontHit.collider != null)
         {
@@ -113,5 +126,27 @@ public class Movement : MonoBehaviour
             anim.SetBool("fallingForward", false);
             anim.SetBool("fallingBackward", false);
         }
+
+        //Hanging Testing
+        if(hangingHit.collider != null && rb.velocity.y < 0 && !climbing)
+        {            
+            StartCoroutine(climbingRoutine(hangingHit.point));            
+        }
+    }
+
+    IEnumerator climbingRoutine(Vector3 landingPosition)
+    {
+        anim.SetTrigger("climbUp");
+        climbing = true;
+        rb.velocity = Vector3.zero;
+        rb.isKinematic = true;
+        GetComponent<BoxCollider2D>().enabled = false;
+
+        yield return new WaitForSeconds(1.5f);
+
+        rb.isKinematic = false;
+        climbing = false;
+        transform.position = landingPosition;
+        GetComponent<BoxCollider2D>().enabled = true;
     }
 }
