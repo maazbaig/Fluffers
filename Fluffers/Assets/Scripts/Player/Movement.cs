@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Movement : MonoBehaviour
 {
-    public GameObject TestVar;
+    public float TestVar;
     public float speed;
     public Animator anim;
 
@@ -26,7 +26,8 @@ public class Movement : MonoBehaviour
 
     public bool facingRight = true;
     private PushPull pushPull;
-    private bool climbing = false;
+    public bool climbing = false;
+    private bool justGrounded = false;
 
     // Start is called before the first frame update
     void Start()
@@ -37,6 +38,8 @@ public class Movement : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         pushPull = GetComponent<PushPull>();
     }
+
+
 
     // Update is called once per frame
     void Update()
@@ -79,6 +82,13 @@ public class Movement : MonoBehaviour
 
     }
 
+    IEnumerator GroundedReset()
+    {
+        justGrounded = true;
+        yield return new WaitForSeconds(0.1f);
+        justGrounded = false;
+    }
+
     private void FixedUpdate()
     {      
         //Middle Position
@@ -91,11 +101,17 @@ public class Movement : MonoBehaviour
         RaycastHit2D frontHit= Physics2D.Raycast(frontPosition.position, -Vector2.up, 1);
 
         //Hanging Position Test
-        RaycastHit2D hangingHit = Physics2D.Raycast(hangingPosition.position, -Vector2.up, 0.5f);
-        
-        
+        RaycastHit2D hangingHit = Physics2D.Raycast(hangingPosition.position, -Vector2.up, 2f);
 
-        if (hit.collider != null && backHit.collider != null && frontHit.collider != null)
+
+        //Grounded Testing
+        if (hit.collider == null && backHit.collider == null && frontHit.collider == null && justGrounded == false)
+        {
+            grounded = false;
+            anim.SetBool("grounded", false);
+            StartCoroutine(GroundedReset());
+        }
+        else if (hit.collider != null && backHit.collider != null && frontHit.collider != null)
         {
             grounded = true;
             anim.SetBool("grounded", true);
@@ -105,15 +121,11 @@ public class Movement : MonoBehaviour
             grounded = true;
             anim.SetBool("grounded", true);
         }
-        else if (hit.collider == null && backHit.collider == null && frontHit.collider == null)
-        {
-            grounded = false;
-            anim.SetBool("grounded", false);
-        }
+
 
 
         //Almost Falling
-        if(hit.collider == null && backHit.collider != null && frontHit.collider == null && MovementInput.x == 0)
+        if (hit.collider == null && backHit.collider != null && frontHit.collider == null && MovementInput.x == 0)
         {
             anim.SetBool("fallingForward", true);
         }
@@ -128,25 +140,25 @@ public class Movement : MonoBehaviour
         }
 
         //Hanging Testing
+        if (hangingHit.collider != null)
+            print(hangingHit.collider.name + " and " + rb.velocity + " and " + climbing);
+
         if(hangingHit.collider != null && rb.velocity.y < 0 && !climbing)
         {            
-            StartCoroutine(climbingRoutine(hangingHit.point));            
+            StartCoroutine(ClimbingRoutine(hangingHit.point));            
         }
     }
 
-    IEnumerator climbingRoutine(Vector3 landingPosition)
+    IEnumerator ClimbingRoutine(Vector3 landingPosition)
     {
         anim.SetTrigger("climbUp");
         climbing = true;
         rb.velocity = Vector3.zero;
         rb.isKinematic = true;
-        GetComponent<BoxCollider2D>().enabled = false;
 
-        yield return new WaitForSeconds(1.5f);
+        yield return new WaitForSeconds(1.7f);
 
         rb.isKinematic = false;
         climbing = false;
-        transform.position = landingPosition;
-        GetComponent<BoxCollider2D>().enabled = true;
     }
 }

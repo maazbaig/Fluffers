@@ -13,7 +13,7 @@ public class PushPull : MonoBehaviour
 
     private Animator anim;
     private float orgSpeed;
-    private float halfSpeed;
+    public float pushSpeed;
 
     // Start is called before the first frame update
     void Start()
@@ -21,7 +21,6 @@ public class PushPull : MonoBehaviour
         movementScript = GetComponent<Movement>();
         anim = GetComponent<Animator>();
         orgSpeed = movementScript.speed;
-        halfSpeed = orgSpeed / 2;
     }
 
     // Update is called once per frame
@@ -36,7 +35,7 @@ public class PushPull : MonoBehaviour
             {
                 grabbedObject = target;
                 anim.SetBool("grabbing", true);
-                movementScript.speed = halfSpeed;
+                movementScript.speed = pushSpeed;
             }
         }
         else
