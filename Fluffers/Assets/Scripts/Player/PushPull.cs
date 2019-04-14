@@ -74,7 +74,8 @@ public class PushPull : MonoBehaviour
 
         if(hit.collider != null)
         {
-            target = hit.collider.gameObject;
+            if(hit.collider.gameObject.tag == "pushPull")
+                target = hit.collider.gameObject;
         } else
         {
             target = null;
